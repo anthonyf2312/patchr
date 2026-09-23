@@ -14,6 +14,10 @@ updates:
       development:
         dependency-type: development
         update-types: [minor, patch]
+    ignore:
+      # Node types follow the runtime's LTS line; move them together with .nvmrc and the Dockerfile.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: github-actions
     directory: /
@@ -31,3 +35,7 @@ updates:
       interval: weekly
     commit-message:
       prefix: chore(docker)
+    ignore:
+      # Only LTS Node versions, moved by hand together with .nvmrc and @types/node.
+      - dependency-name: node
+        update-types: ['version-update:semver-major']
