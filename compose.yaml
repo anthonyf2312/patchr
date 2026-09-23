@@ -13,7 +13,9 @@ services:
     env_file: .env
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgres://patchr:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/patchr
+      # The password goes in PGPASSWORD rather than the URL, so it can contain any characters.
+      DATABASE_URL: postgres://patchr@db:5432/patchr
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
     depends_on:
       db:
         condition: service_healthy
