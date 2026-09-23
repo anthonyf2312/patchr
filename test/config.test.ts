@@ -9,7 +9,7 @@ describe('loadConfig', () => {
       POLL_INTERVAL_SECONDS: 180,
       HEALTH_PORT: 3000,
       MAX_FEEDS_PER_GUILD: 25,
-      REPO_URL: 'https://github.com/anthonyf2312/Patchr-bot',
+      REPO_URL: 'https://github.com/anthonyf2312/patchr',
       WEBSITE_URL: 'https://anthonyf2312.github.io/patchr',
     });
     expect(config.DATABASE_URL).toBeUndefined();

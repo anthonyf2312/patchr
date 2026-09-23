@@ -5,10 +5,10 @@
   "license": "MIT",
   "author": "Anthony (https://github.com/anthonyf2312)",
   "homepage": "https://anthonyf2312.github.io/patchr",
-  "bugs": "https://github.com/anthonyf2312/Patchr-bot/issues",
+  "bugs": "https://github.com/anthonyf2312/patchr/issues",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/anthonyf2312/Patchr-bot.git"
+    "url": "git+https://github.com/anthonyf2312/patchr.git"
   },
   "type": "module",
   "private": true,

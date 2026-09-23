@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://anthonyf2312.github.io/patchr"><img src="https://img.shields.io/badge/website-patchr-FF5E8A?style=flat-square" alt="Website"></a>
   <img src="https://img.shields.io/badge/status-coming%20soon-8B7CFF?style=flat-square" alt="Status: coming soon">
-  <a href="https://github.com/anthonyf2312/Patchr-bot/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/anthonyf2312/Patchr-bot/ci.yml?branch=main&style=flat-square&label=CI" alt="CI status"></a>
+  <a href="https://github.com/anthonyf2312/patchr/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/anthonyf2312/patchr/ci.yml?branch=main&style=flat-square&label=CI" alt="CI status"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-17142B?style=flat-square" alt="MIT license"></a>
   <br>
   <img src="https://img.shields.io/badge/discord.js-v14-5865F2?style=flat-square&logo=discord&logoColor=white" alt="discord.js v14">
@@ -50,8 +50,8 @@ The public bot is nearly ready. Its invite link and support server arrive with 1
 ## Run your own
 
 ```sh
-curl -O https://raw.githubusercontent.com/anthonyf2312/Patchr-bot/main/compose.yaml
-curl -o .env https://raw.githubusercontent.com/anthonyf2312/Patchr-bot/main/.env.example
+curl -O https://raw.githubusercontent.com/anthonyf2312/patchr/main/compose.yaml
+curl -o .env https://raw.githubusercontent.com/anthonyf2312/patchr/main/.env.example
 docker compose up -d   # after adding your tokens to .env
 ```
 

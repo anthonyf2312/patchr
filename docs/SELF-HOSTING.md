@@ -20,8 +20,8 @@ Create a [fine-grained personal access token](https://github.com/settings/person
 
 ```sh
 mkdir patchr && cd patchr
-curl -O https://raw.githubusercontent.com/anthonyf2312/Patchr-bot/main/compose.yaml
-curl -o .env https://raw.githubusercontent.com/anthonyf2312/Patchr-bot/main/.env.example
+curl -O https://raw.githubusercontent.com/anthonyf2312/patchr/main/compose.yaml
+curl -o .env https://raw.githubusercontent.com/anthonyf2312/patchr/main/.env.example
 # Edit .env: set DISCORD_TOKEN, GITHUB_TOKEN and POSTGRES_PASSWORD.
 docker compose up -d
 ```
@@ -33,7 +33,7 @@ This runs Patchr with its own Postgres. Slash commands register themselves on fi
 You need Node 24 or newer. Without `DATABASE_URL`, Patchr uses PGlite, a copy of Postgres that runs inside the process and keeps its data in `./data`, so there's no database server to install.
 
 ```sh
-git clone https://github.com/anthonyf2312/Patchr-bot.git && cd Patchr-bot
+git clone https://github.com/anthonyf2312/patchr.git && cd patchr
 npm ci && npm run build
 cp .env.example .env   # then fill it in
 npm start

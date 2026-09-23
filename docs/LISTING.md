@@ -35,9 +35,9 @@ patch notes, changelog, github, releases, announcements, developer tools
 ## Links
 
 - Website: https://anthonyf2312.github.io/patchr
-- Source: https://github.com/anthonyf2312/Patchr-bot
-- Privacy policy: https://github.com/anthonyf2312/Patchr-bot/blob/main/PRIVACY.md
-- Terms of service: https://github.com/anthonyf2312/Patchr-bot/blob/main/TERMS.md
+- Source: https://github.com/anthonyf2312/patchr
+- Privacy policy: https://github.com/anthonyf2312/patchr/blob/main/PRIVACY.md
+- Terms of service: https://github.com/anthonyf2312/patchr/blob/main/TERMS.md
 - Support server: coming soon
 
 ## Accuracy notes

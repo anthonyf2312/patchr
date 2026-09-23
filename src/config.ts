@@ -23,7 +23,7 @@ const schema = z.object({
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   MAX_FEEDS_PER_GUILD: z.coerce.number().int().min(1).max(100).default(25),
   SUPPORT_URL: optional.pipe(z.url().optional()),
-  REPO_URL: z.url().default('https://github.com/anthonyf2312/Patchr-bot'),
+  REPO_URL: z.url().default('https://github.com/anthonyf2312/patchr'),
   WEBSITE_URL: z.url().default('https://anthonyf2312.github.io/patchr'),
   NODE_ENV: z.string().default('production'),
 });

@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-Please report security problems privately through [GitHub's private vulnerability reporting](https://github.com/anthonyf2312/Patchr-bot/security/advisories/new), not in a public issue.
+Please report security problems privately through [GitHub's private vulnerability reporting](https://github.com/anthonyf2312/patchr/security/advisories/new), not in a public issue.
 
 It helps to include what an attacker could do, the steps to reproduce it, and the version (shown in `/help`). You'll get a reply within a week. Fixes ship as a normal release, and the advisory is published once servers have had time to update.
 

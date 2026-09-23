@@ -29,7 +29,7 @@ Only to run Patchr: to post notes in the channels you chose, and to keep those p
 
 When Patchr is removed from a server, everything it stored for that server is deleted: settings, feeds, post records and drafts. If Patchr was offline at the time, the data is deleted the next time it starts. Messages Patchr already posted stay in your channels until you delete them.
 
-To have your data deleted sooner, or to ask what is stored about you, open an issue at [github.com/anthonyf2312/Patchr-bot/issues](https://github.com/anthonyf2312/Patchr-bot/issues). For anything you'd rather not post publicly, use the repository's [private reporting form](https://github.com/anthonyf2312/Patchr-bot/security/advisories/new).
+To have your data deleted sooner, or to ask what is stored about you, open an issue at [github.com/anthonyf2312/patchr/issues](https://github.com/anthonyf2312/patchr/issues). For anything you'd rather not post publicly, use the repository's [private reporting form](https://github.com/anthonyf2312/patchr/security/advisories/new).
 
 ## Changes
 
