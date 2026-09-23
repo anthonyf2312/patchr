@@ -49,14 +49,22 @@ npm start
 | `1` | The newest `1.x` release, so a breaking `2.0` never installs itself. The default once 1.0 is out |
 | `1.2.3` | Exactly that version |
 
-To update automatically, copy `deploy/` to the server and turn on the timer, which checks for a new image every 10 minutes:
+To update automatically, run `deploy/update.sh` every 10 minutes. It pulls the newest image, restarts Patchr only if something changed, and never touches other projects on the machine. The server pulls updates rather than waiting for them, so this works on a home server behind a router too.
+
+With cron (no root needed), from the folder with `compose.yaml`:
+
+```sh
+mkdir -p deploy && curl -fsSL -o deploy/update.sh https://raw.githubusercontent.com/anthonyf2312/patchr/main/deploy/update.sh
+chmod +x deploy/update.sh
+(crontab -l 2>/dev/null; echo "*/10 * * * * $PWD/deploy/update.sh >> $PWD/update.log 2>&1") | crontab -
+```
+
+Or with systemd, if Patchr lives in `/opt/patchr`:
 
 ```sh
 sudo cp deploy/patchr-update.service deploy/patchr-update.timer /etc/systemd/system/
 sudo systemctl enable --now patchr-update.timer
 ```
-
-The server pulls updates rather than waiting for them, so this works on a home server behind a router too.
 
 ## Configuration
 

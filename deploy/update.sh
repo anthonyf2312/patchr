@@ -1,11 +1,28 @@
 #!/bin/sh
-# Pulls the newest image for the tag in compose.yaml and restarts Patchr if it changed.
-# Run it from a systemd timer (see patchr-update.timer) or cron. Because the server pulls,
-# this works behind NAT too: nothing has to reach in from GitHub.
+# Pulls the newest images for the tags in compose.yaml and .env, and restarts Patchr if they changed.
+# Run it from cron (no root needed) or the systemd timer next to it. The server pulls, so this works
+# behind NAT too: nothing has to reach in from GitHub.
+#
+# Quiet unless something changed, and it only removes images this Patchr stopped using, so other
+# projects on the same machine are never touched.
 set -eu
 
 cd "${PATCHR_DIR:-$(dirname "$0")/..}"
 
+before=$(docker compose images --quiet | sort)
 docker compose pull --quiet
-docker compose up -d --remove-orphans
-docker image prune --force > /dev/null
+
+if ! out=$(docker compose up -d --remove-orphans 2>&1); then
+  echo "$(date -Iseconds) update failed:"
+  echo "$out"
+  exit 1
+fi
+
+after=$(docker compose images --quiet | sort)
+if [ "$before" != "$after" ]; then
+  echo "$(date -Iseconds) updated: $(echo "$after" | tr '\n' ' ')"
+  for image in $before; do
+    # Fails harmlessly if anything still uses the image.
+    docker image rm "$image" > /dev/null 2>&1 || true
+  done
+fi
