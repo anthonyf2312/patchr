@@ -41,7 +41,15 @@ npm start
 
 ## Staying up to date
 
-`compose.yaml` follows the newest `1.x` release, so a breaking `2.0` never installs itself. To update automatically, copy `deploy/` to the server and turn on the timer, which checks for a new image every 10 minutes:
+`PATCHR_TAG` in `.env` picks the image:
+
+| Tag | What you get |
+|---|---|
+| `edge` | The newest code on `main`. The only tag until Patchr 1.0 |
+| `1` | The newest `1.x` release, so a breaking `2.0` never installs itself. The default once 1.0 is out |
+| `1.2.3` | Exactly that version |
+
+To update automatically, copy `deploy/` to the server and turn on the timer, which checks for a new image every 10 minutes:
 
 ```sh
 sudo cp deploy/patchr-update.service deploy/patchr-update.timer /etc/systemd/system/
@@ -66,7 +74,7 @@ The server pulls updates rather than waiting for them, so this works on a home s
 | `SUPPORT_URL` | none | Support server link shown in `/help` |
 | `WEBSITE_URL` | Patchr's site | Website link shown in `/help` |
 | `REPO_URL` | this repo | Source link shown in `/help` |
-| `PATCHR_TAG` | `1` | Docker image tag `compose.yaml` follows |
+| `PATCHR_TAG` | `1` | Docker image to run; see [Staying up to date](#staying-up-to-date) |
 
 ## Backups
 

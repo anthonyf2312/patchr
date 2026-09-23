@@ -4,8 +4,8 @@ name: patchr
 
 services:
   patchr:
-    # Tracks the newest 1.x release, so a breaking 2.0 never installs itself.
-    # Before 1.0 is released, set PATCHR_TAG=0 in .env.
+    # Follows the newest 1.x release, so a breaking 2.0 never installs itself.
+    # Until 1.0 is out, .env sets PATCHR_TAG=edge (the newest code).
     image: ghcr.io/anthonyf2312/patchr:${PATCHR_TAG:-1}
     # To build from source instead of pulling the published image:
     # build: .

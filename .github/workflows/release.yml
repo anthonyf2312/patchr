@@ -1,7 +1,7 @@
 name: Release
 
-# Conventional Commits on main keep a release PR up to date. Merging it tags a release, and the
-# docker job below publishes the image.
+# Every push to main publishes the `edge` image. Conventional Commits also keep a release PR up to
+# date; merging it tags a release, and the same image job adds the version tags (1.2.3, 1.2, 1, latest).
 #
 # The image is built in this workflow on purpose. Releases created with GITHUB_TOKEN don't
 # trigger other workflows, so a separate "on: release" workflow would never run.
@@ -34,20 +34,27 @@ jobs:
 
   docker:
     needs: release-please
-    if: needs.release-please.outputs.created == 'true'
+    # Runs even if release-please failed, so `edge` still ships; a failed step just means no release tags.
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    # Edge builds queue behind each other so `edge` always ends on the newest commit. Release builds
+    # get their own group, so a later push can never cancel one.
+    concurrency:
+      group: docker-${{ needs.release-please.outputs.created == 'true' && github.sha || 'edge' }}
+      cancel-in-progress: false
     env:
       IMAGE: ghcr.io/${{ github.repository_owner }}/patchr
+      RELEASE: ${{ needs.release-please.outputs.created == 'true' }}
+      VERSION: ${{ needs.release-please.outputs.major }}.${{ needs.release-please.outputs.minor }}.${{ needs.release-please.outputs.patch }}
+      MAJOR_MINOR: ${{ needs.release-please.outputs.major }}.${{ needs.release-please.outputs.minor }}
       MAJOR: ${{ needs.release-please.outputs.major }}
-      MINOR: ${{ needs.release-please.outputs.minor }}
-      PATCH: ${{ needs.release-please.outputs.patch }}
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ needs.release-please.outputs.tag }}
+          ref: ${{ needs.release-please.outputs.tag || github.sha }}
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
@@ -60,10 +67,12 @@ jobs:
         with:
           images: ${{ env.IMAGE }}
           tags: |
-            type=raw,value=${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.PATCH }}
-            type=raw,value=${{ env.MAJOR }}.${{ env.MINOR }}
-            type=raw,value=${{ env.MAJOR }}
-            type=raw,value=latest
+            type=raw,value=edge
+            type=sha,prefix=sha-,format=short
+            type=raw,value=${{ env.VERSION }},enable=${{ env.RELEASE }}
+            type=raw,value=${{ env.MAJOR_MINOR }},enable=${{ env.RELEASE }}
+            type=raw,value=${{ env.MAJOR }},enable=${{ env.RELEASE }}
+            type=raw,value=latest,enable=${{ env.RELEASE }}
       - uses: docker/build-push-action@v6
         with:
           context: .
