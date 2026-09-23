@@ -1,0 +1,37 @@
+name: Bug report
+description: Something doesn't work the way it should
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: input
+    id: repo
+    attributes:
+      label: GitHub repo (if it's about a feed)
+      placeholder: owner/repo
+  - type: input
+    id: version
+    attributes:
+      label: Patchr version
+      description: Shown at the bottom of /help.
+  - type: dropdown
+    id: instance
+    attributes:
+      label: Which Patchr
+      options:
+        - The public bot
+        - My own copy (Docker)
+        - My own copy (Node)
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error code or logs
+      description: If Patchr showed an error code, paste it here. Remove any tokens from logs.
+      render: text

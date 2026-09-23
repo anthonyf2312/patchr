@@ -1,0 +1,10 @@
+[Unit]
+Description=Update Patchr to the newest release
+Wants=network-online.target
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+# Change this if Patchr lives somewhere other than /opt/patchr.
+Environment=PATCHR_DIR=/opt/patchr
+ExecStart=/opt/patchr/deploy/update.sh
