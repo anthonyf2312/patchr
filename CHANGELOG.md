@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.0](https://github.com/anthonyf2312/patchr/compare/v1.0.0...v1.1.0) (2026-09-23)
+
+
+### New
+
+* right-click a post → Apps → Refresh patch note to redraw it right away, picking up a new profile picture, server icon or setting ([4f0d3c5](https://github.com/anthonyf2312/patchr/commit/4f0d3c59c4ac108b8ee700e4edc254d09cc0392b))
+* turn off the avatar or server icon on posts, for the whole server with /settings thumbnail or for one feed with /feed edit thumbnail ([4f0d3c5](https://github.com/anthonyf2312/patchr/commit/4f0d3c59c4ac108b8ee700e4edc254d09cc0392b))
+* when a release is deleted on GitHub or turned back into a draft, its post turns grey and says the release was pulled, and goes back to normal if the release returns ([4f0d3c5](https://github.com/anthonyf2312/patchr/commit/4f0d3c59c4ac108b8ee700e4edc254d09cc0392b))
+
 ## [1.0.0](https://github.com/anthonyf2312/patchr/compare/v0.1.0...v1.0.0) (2026-09-23)
 
 
