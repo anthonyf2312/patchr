@@ -34,11 +34,12 @@ patch notes, changelog, github, releases, announcements, developer tools
 
 ## Links
 
-- Website: https://anthonyf2312.github.io/patchr
+- Website: https://anthonyf2312.github.io/patchr/
+- Invite: https://discord.com/oauth2/authorize?client_id=1552316775461425152&permissions=19456&integration_type=0&scope=bot+applications.commands
 - Source: https://github.com/anthonyf2312/patchr
 - Privacy policy: https://github.com/anthonyf2312/patchr/blob/main/PRIVACY.md
 - Terms of service: https://github.com/anthonyf2312/patchr/blob/main/TERMS.md
-- Support server: coming soon
+- Support server: https://discord.gg/hsWvqgs9eG
 
 ## Accuracy notes
 

@@ -45,8 +45,8 @@ npm start
 
 | Tag | What you get |
 |---|---|
-| `edge` | The newest code on `main`. The only tag until Patchr 1.0 |
-| `1` | The newest `1.x` release, so a breaking `2.0` never installs itself. The default once 1.0 is out |
+| `edge` | The newest code on `main`, before it is released |
+| `1` | The newest `1.x` release, so a breaking `2.0` never installs itself. The default |
 | `1.2.3` | Exactly that version |
 
 To update automatically, run `deploy/update.sh` every 10 minutes. It pulls the newest image, restarts Patchr only if something changed, and never touches other projects on the machine. The server pulls updates rather than waiting for them, so this works on a home server behind a router too.

@@ -6,7 +6,8 @@
 
 <p align="center">
   <a href="https://anthonyf2312.github.io/patchr"><img src="https://img.shields.io/badge/website-patchr-FF5E8A?style=flat-square" alt="Website"></a>
-  <img src="https://img.shields.io/badge/status-coming%20soon-8B7CFF?style=flat-square" alt="Status: coming soon">
+  <a href="https://github.com/anthonyf2312/patchr/releases/latest"><img src="https://img.shields.io/github/v/release/anthonyf2312/patchr?style=flat-square&color=8B7CFF&label=release" alt="Latest release"></a>
+  <a href="https://discord.gg/hsWvqgs9eG"><img src="https://img.shields.io/badge/support-Discord-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Support server"></a>
   <a href="https://github.com/anthonyf2312/patchr/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/anthonyf2312/patchr/ci.yml?branch=main&style=flat-square&label=CI" alt="CI status"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-17142B?style=flat-square" alt="MIT license"></a>
   <br>
@@ -19,6 +20,10 @@
 <p align="center">
   Patchr posts clean, formatted patch notes to your Discord server,<br>
   automatically from GitHub releases or written by you for any project.
+</p>
+
+<p align="center">
+  <a href="https://discord.com/oauth2/authorize?client_id=1552316775461425152&permissions=19456&integration_type=0&scope=bot+applications.commands"><img src="https://img.shields.io/badge/Add%20to%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Add Patchr to Discord"></a>
 </p>
 
 ## Features
@@ -45,7 +50,7 @@ By default these need **Manage Server**. You can change that in Server Settings 
 
 ## Add Patchr to your server
 
-The public bot is nearly ready. Its invite link and support server arrive with 1.0, so keep an eye on the [website](https://anthonyf2312.github.io/patchr) or star this repo.
+[Add Patchr](https://discord.com/oauth2/authorize?client_id=1552316775461425152&permissions=19456&integration_type=0&scope=bot+applications.commands), pick a channel, then run `/feed add github` or `/patch`. Questions or ideas? Join the [support server](https://discord.gg/hsWvqgs9eG).
 
 ## Run your own
 
