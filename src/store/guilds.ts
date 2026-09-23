@@ -6,9 +6,15 @@ export interface GuildSettings {
   defaultChannelId: string | null;
   defaultPingRoleId: string | null;
   autoPublish: boolean;
+  showThumbnail: boolean;
 }
 
-const DEFAULTS: GuildSettings = { defaultChannelId: null, defaultPingRoleId: null, autoPublish: true };
+const DEFAULTS: GuildSettings = {
+  defaultChannelId: null,
+  defaultPingRoleId: null,
+  autoPublish: true,
+  showThumbnail: true,
+};
 
 export async function ensureGuild(db: Database, guildId: string): Promise<void> {
   await db.insert(guilds).values({ id: guildId }).onConflictDoNothing();
@@ -20,6 +26,7 @@ export async function getGuildSettings(db: Database, guildId: string): Promise<G
       defaultChannelId: guilds.defaultChannelId,
       defaultPingRoleId: guilds.defaultPingRoleId,
       autoPublish: guilds.autoPublish,
+      showThumbnail: guilds.showThumbnail,
     })
     .from(guilds)
     .where(eq(guilds.id, guildId));

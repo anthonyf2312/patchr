@@ -28,8 +28,8 @@
 
 ## Features
 
-- **GitHub releases, automatically.** Pick a public repo and a channel. New releases post themselves, and edits on GitHub update the post.
-- **Custom notes for everything else.** `/patch` opens a form, shows you a private preview, then posts. Fix a typo later from the message's **Apps** menu.
+- **GitHub releases, automatically.** Pick a public repo and a channel. New releases post themselves, edits on GitHub update the post, and a release pulled from GitHub is marked as pulled.
+- **Custom notes for everything else.** `/patch` opens a form, shows you a private preview, then posts. Fix a typo later from the message's **Apps** menu, where **Refresh patch note** also redraws any post on the spot.
 - **Easy to read.** Markdown, headings and lists come through properly, and sections get their own badges:
   <img src="brand/export/embeds/badge-new-128.png" width="16" height="16" alt=""> New&nbsp;
   <img src="brand/export/embeds/badge-fix-128.png" width="16" height="16" alt=""> Fixes&nbsp;
@@ -43,7 +43,7 @@
 | `/feed add github` | Post a repo's releases to a channel |
 | `/feed list` · `/feed edit` · `/feed remove` | Manage your feeds |
 | `/patch` | Write, preview and post your own notes |
-| `/settings` | Default channel, ping role and publishing |
+| `/settings` | Default channel, ping role, publishing and thumbnails |
 | `/help` | How it all works |
 
 By default these need **Manage Server**. You can change that in Server Settings → Integrations → Patchr.

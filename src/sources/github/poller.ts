@@ -1,14 +1,17 @@
-import { and, asc, eq, exists, inArray, lte } from 'drizzle-orm';
+import { and, asc, eq, exists, inArray, isNull, lte, notInArray, sql } from 'drizzle-orm';
 import type { Logger } from 'pino';
 import { type Deliverer, type Feed, MAX_ATTEMPTS } from '../../core/deliver.js';
 import { noteHash } from '../../core/hash.js';
 import type { Database } from '../../db/client.js';
 import { feeds, githubRepos, posts } from '../../db/schema.js';
-import type { GitHubApi } from './api.js';
+import { currentAvatar, type GitHubApi, RELEASES_PAGE_SIZE } from './api.js';
 import { type GitHubRelease, releaseToNote } from './to-note.js';
 
 export type RepoRow = typeof githubRepos.$inferSelect;
-export type ReleaseApi = Pick<GitHubApi, 'listReleases' | 'getRepoById' | 'rateLimitRemaining'>;
+export type ReleaseApi = Pick<
+  GitHubApi,
+  'listReleases' | 'getRepoById' | 'getRelease' | 'avatarUrl' | 'rateLimitRemaining'
+>;
 
 export interface PollerOptions {
   db: Database;
@@ -176,7 +179,8 @@ export class GitHubPoller {
         return;
 
       case 'ok': {
-        const { retry, lastReleaseAt } = await this.#process(repo, result.releases);
+        const { retry: failed, lastReleaseAt } = await this.#process(repo, result.releases);
+        const retry = (await this.#markPulled(repo, result.releases)) || failed;
         // Dropping the etag forces a full response next time, which is what retries failed deliveries.
         const etag = retry ? null : (result.etag ?? null);
         await this.#update(
@@ -247,6 +251,53 @@ export class GitHubPoller {
     return { retry, lastReleaseAt: new Date(newest.published_at) };
   }
 
+  /**
+   * Marks posts whose release was deleted or turned back into a draft. Only releases the list
+   * should include are checked, and only GitHub's own answer for that release marks one:
+   * a release that just fell off the list is left alone. Returns true if an edit failed.
+   */
+  async #markPulled(repo: RepoRow, releases: GitHubRelease[]): Promise<boolean> {
+    const listed = releases.filter((r) => !r.draft && r.published_at !== null);
+    const oldest = listed.map((r) => r.published_at as string).sort()[0];
+    const complete = releases.length < RELEASES_PAGE_SIZE;
+    if (!complete && !oldest) return false;
+
+    const publishedAt = sql<string>`${posts.note}->>'publishedAt'`;
+    const candidates = await this.#db
+      .select({ post: posts })
+      .from(posts)
+      .innerJoin(feeds, eq(posts.feedId, feeds.id))
+      .where(
+        and(
+          eq(feeds.githubRepoId, repo.id),
+          eq(posts.kind, 'github'),
+          eq(posts.status, 'sent'),
+          isNull(sql`${posts.note}->>'pulled'`),
+          listed.length > 0 ? notInArray(posts.releaseKey, listed.map(releaseKey)) : undefined,
+          complete ? undefined : sql`${publishedAt} >= ${oldest}`,
+        ),
+      );
+
+    let failed = false;
+    const checked = new Map<string, boolean>();
+    for (const { post } of candidates) {
+      let pulled = checked.get(post.releaseKey);
+      if (pulled === undefined) {
+        const result = await this.#api.getRelease(
+          repo.fullName,
+          Number(post.releaseKey.slice('github:'.length)),
+        );
+        pulled = result.kind === 'gone' || (result.kind === 'ok' && result.release.draft);
+        checked.set(post.releaseKey, pulled);
+      }
+      if (!pulled) continue;
+
+      const note = { ...post.note, pulled: true };
+      if ((await this.#deliverer.editPost(post, note, noteHash(note))) === 'failed') failed = true;
+    }
+    return failed;
+  }
+
   /** The daily check: catches renames, and stops a repo that turned private. Returns undefined to stop this poll. */
   async #checkRepo(repo: RepoRow): Promise<RepoRow | undefined> {
     const now = this.#now();
@@ -265,7 +316,7 @@ export class GitHubPoller {
 
     const updates = {
       fullName: result.repo.full_name,
-      ownerAvatarUrl: result.repo.owner.avatar_url,
+      ownerAvatarUrl: await currentAvatar(this.#api, result.repo.owner.avatar_url, repo.ownerAvatarUrl),
       status: 'ok' as const,
       lastPrivacyCheckAt: new Date(now),
     };

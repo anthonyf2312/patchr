@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { RateLimiter } from '../../lib/rate-limiter.js';
 import type { GitHubRelease } from './to-note.js';
 
@@ -22,6 +23,8 @@ export type ReleasesResult =
 
 export type RepoResult = { kind: 'ok'; repo: GitHubRepo } | Failure;
 
+export type ReleaseResult = { kind: 'ok'; release: GitHubRelease } | Failure;
+
 export interface GitHubApiOptions {
   token?: string;
   userAgent: string;
@@ -38,7 +41,10 @@ export interface GitHubApiOptions {
  */
 export const GITHUB_REQUESTS_PER_MINUTE = 600;
 
-/** The two GitHub endpoints Patchr needs, with ETags and rate limits handled. */
+/** How many releases `listReleases` asks for: the newest ones, by creation date. */
+export const RELEASES_PAGE_SIZE = 20;
+
+/** The GitHub endpoints Patchr needs, with ETags and rate limits handled. */
 export class GitHubApi {
   readonly #token: string | undefined;
   readonly #userAgent: string;
@@ -60,13 +66,45 @@ export class GitHubApi {
   }
 
   async listReleases(fullName: string, etag?: string): Promise<ReleasesResult> {
-    const response = await this.#request(`/repos/${fullName}/releases?per_page=20`, etag);
+    const response = await this.#request(`/repos/${fullName}/releases?per_page=${RELEASES_PAGE_SIZE}`, etag);
     if ('kind' in response) return response;
     if (response.status === 304) return { kind: 'not_modified' };
 
     const releases = (await response.json()) as GitHubRelease[];
     const newEtag = response.headers.get('etag') ?? undefined;
     return newEtag ? { kind: 'ok', releases, etag: newEtag } : { kind: 'ok', releases };
+  }
+
+  /** One release. A deleted release, or one turned back into a draft, is `gone`. */
+  async getRelease(fullName: string, id: number): Promise<ReleaseResult> {
+    const response = await this.#request(`/repos/${fullName}/releases/${id}`);
+    if ('kind' in response) return response;
+    return { kind: 'ok', release: (await response.json()) as GitHubRelease };
+  }
+
+  /**
+   * The avatar URL with a version taken from the image itself. GitHub keeps the same URL when
+   * someone changes their picture, and Discord caches images by URL, so without this a new
+   * picture never shows. Returns undefined when the image can't be checked.
+   */
+  async avatarUrl(raw: string): Promise<string | undefined> {
+    try {
+      // The avatar CDN isn't the REST API: no token, and it doesn't count toward the rate limit.
+      const response = await this.#fetch(raw, {
+        method: 'HEAD',
+        headers: { 'user-agent': this.#userAgent },
+        signal: AbortSignal.timeout(this.#timeoutMs),
+      });
+      const tag = response.ok
+        ? (response.headers.get('etag') ?? response.headers.get('last-modified'))
+        : null;
+      if (!tag) return undefined;
+      const url = new URL(raw);
+      url.searchParams.set(AVATAR_VERSION, createHash('sha256').update(tag).digest('hex').slice(0, 12));
+      return url.toString();
+    } catch {
+      return undefined;
+    }
   }
 
   async getRepo(fullName: string): Promise<RepoResult> {
@@ -115,6 +153,31 @@ export class GitHubApi {
 
     const body = await response.text().catch(() => '');
     return { kind: 'error', message: `GitHub ${response.status}: ${body.slice(0, 200)}` };
+  }
+}
+
+const AVATAR_VERSION = 'pv';
+
+/**
+ * The avatar URL to store: a freshly versioned one, or, if that lookup failed, the stored one
+ * while it's still the same avatar. Switching back and forth would re-edit every post.
+ */
+export async function currentAvatar(
+  api: Pick<GitHubApi, 'avatarUrl'>,
+  raw: string,
+  stored: string | null | undefined,
+): Promise<string> {
+  return (await api.avatarUrl(raw)) ?? (stored && isSameAvatar(stored, raw) ? stored : raw);
+}
+
+/** True when `stored` is `raw` with or without a version from `avatarUrl`. */
+function isSameAvatar(stored: string, raw: string): boolean {
+  try {
+    const url = new URL(stored);
+    url.searchParams.delete(AVATAR_VERSION);
+    return url.toString() === new URL(raw).toString();
+  } catch {
+    return false;
   }
 }
 

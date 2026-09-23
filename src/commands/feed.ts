@@ -29,6 +29,19 @@ import { strings } from '../strings.js';
 
 const postChannelTypes = [ChannelType.GuildText, ChannelType.GuildAnnouncement] as const;
 
+const thumbnailChoices = [
+  { name: 'On', value: 'on' },
+  { name: 'Off', value: 'off' },
+  { name: 'Server setting', value: 'server' },
+];
+
+/** The `thumbnail` option as stored: true, false, or null to follow the server. Undefined when not given. */
+function thumbnailOption(interaction: ChatInputCommandInteraction<'cached'>): boolean | null | undefined {
+  const value = interaction.options.getString('thumbnail');
+  if (value === null) return undefined;
+  return value === 'server' ? null : value === 'on';
+}
+
 export const feedCommand: Command = {
   data: new SlashCommandBuilder()
     .setName('feed')
@@ -61,6 +74,12 @@ export const feedCommand: Command = {
             .addRoleOption((o) => o.setName('ping').setDescription('Role to ping for each release'))
             .addBooleanOption((o) =>
               o.setName('prereleases').setDescription('Post pre-releases too (default: no)'),
+            )
+            .addStringOption((o) =>
+              o
+                .setName('thumbnail')
+                .setDescription("Show the owner's avatar on posts (default: server setting)")
+                .addChoices(...thumbnailChoices),
             ),
         ),
     )
@@ -80,7 +99,13 @@ export const feedCommand: Command = {
         )
         .addRoleOption((o) => o.setName('ping').setDescription('Role to ping for each release'))
         .addBooleanOption((o) => o.setName('clear-ping').setDescription('Stop pinging a role'))
-        .addBooleanOption((o) => o.setName('prereleases').setDescription('Post pre-releases too')),
+        .addBooleanOption((o) => o.setName('prereleases').setDescription('Post pre-releases too'))
+        .addStringOption((o) =>
+          o
+            .setName('thumbnail')
+            .setDescription("Show the owner's avatar on posts")
+            .addChoices(...thumbnailChoices),
+        ),
     )
     .addSubcommand((sub) =>
       sub
@@ -225,12 +250,15 @@ async function addGithub(interaction: ChatInputCommandInteraction<'cached'>, app
   }
 
   const includePrereleases = interaction.options.getBoolean('prereleases') ?? false;
+  const avatarUrl = await app.github.avatarUrl(lookup.repo.owner.avatar_url);
   const created = await createGithubFeed(app.db, {
     guildId: interaction.guildId,
     repo: lookup.repo,
     channelId,
     pingRoleId,
     includePrereleases,
+    showThumbnail: thumbnailOption(interaction) ?? null,
+    ...(avatarUrl && { avatarUrl }),
     createdBy: interaction.user.id,
   });
   if (created.kind === 'duplicate') {
@@ -269,6 +297,7 @@ async function list(interaction: ChatInputCommandInteraction<'cached'>, app: App
         feed.channelId,
         feed.pingRoleId,
         feed.includePrereleases,
+        feed.showThumbnail,
       ),
     ];
     if (feed.status === 'paused') {
@@ -319,11 +348,14 @@ async function edit(interaction: ChatInputCommandInteraction<'cached'>, app: App
     warning = role.warning;
   }
 
+  const thumbnail = thumbnailOption(interaction);
+
   // Every edit re-checks the channel, so a successful edit also resumes a paused feed.
   await updateFeed(app.db, feed.id, {
     channelId,
     pingRoleId,
     includePrereleases: interaction.options.getBoolean('prereleases') ?? feed.includePrereleases,
+    showThumbnail: thumbnail === undefined ? feed.showThumbnail : thumbnail,
     status: 'active',
     pausedReason: null,
   });

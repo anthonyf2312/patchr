@@ -20,6 +20,8 @@ export const guilds = pgTable('guilds', {
   defaultChannelId: text('default_channel_id'),
   defaultPingRoleId: text('default_ping_role_id'),
   autoPublish: boolean('auto_publish').notNull().default(true),
+  /** Show the repo owner's avatar or the server icon on posts. A feed can override it. */
+  showThumbnail: boolean('show_thumbnail').notNull().default(true),
   createdAt: timestamptz('created_at').notNull().defaultNow(),
   updatedAt: timestamptz('updated_at').notNull().defaultNow(),
 });
@@ -59,6 +61,8 @@ export const feeds = pgTable(
     channelId: text('channel_id').notNull(),
     pingRoleId: text('ping_role_id'),
     includePrereleases: boolean('include_prereleases').notNull().default(false),
+    /** Null follows the server's setting. */
+    showThumbnail: boolean('show_thumbnail'),
     status: text('status', { enum: ['active', 'paused'] })
       .notNull()
       .default('active'),

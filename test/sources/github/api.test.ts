@@ -114,3 +114,48 @@ describe('GitHubApi.getRepo', () => {
     expect(await api.getRepo('acme/nope')).toEqual({ kind: 'gone', status: 404 });
   });
 });
+
+describe('GitHubApi.getRelease', () => {
+  it('returns one release by id', async () => {
+    const { api, fetch } = apiWith(respond(200, release));
+    expect(await api.getRelease('acme/rocket', 1)).toEqual({ kind: 'ok', release });
+    expect(fetch.mock.calls[0]?.[0]).toBe('https://api.github.com/repos/acme/rocket/releases/1');
+  });
+
+  it('reports a deleted release as gone', async () => {
+    const { api } = apiWith(respond(404, { message: 'Not Found' }));
+    expect(await api.getRelease('acme/rocket', 1)).toEqual({ kind: 'gone', status: 404 });
+  });
+});
+
+describe('GitHubApi.avatarUrl', () => {
+  const avatar = 'https://avatars.githubusercontent.com/u/1?v=4';
+
+  it("adds a version taken from the image's etag, so a new picture gets a new URL", async () => {
+    const { api, fetch } = apiWith(
+      respond(200, null, { etag: '"aaa"' }),
+      respond(200, null, { etag: '"bbb"' }),
+    );
+    const first = await api.avatarUrl(avatar);
+    const second = await api.avatarUrl(avatar);
+
+    expect(first).toMatch(/^https:\/\/avatars\.githubusercontent\.com\/u\/1\?v=4&pv=[0-9a-f]{12}$/);
+    expect(second).not.toBe(first);
+    const [url, init] = fetch.mock.calls[0] ?? [];
+    expect(url).toBe(avatar);
+    expect(init?.method).toBe('HEAD');
+    expect(new Headers(init?.headers).get('authorization')).toBeNull();
+  });
+
+  it('gives the same URL for the same picture', async () => {
+    const { api } = apiWith(respond(200, null, { etag: '"aaa"' }), respond(200, null, { etag: '"aaa"' }));
+    expect(await api.avatarUrl(avatar)).toBe(await api.avatarUrl(avatar));
+  });
+
+  it('gives nothing when the version is unknown', async () => {
+    const { api } = apiWith(respond(200), respond(500), new TypeError('fetch failed'));
+    expect(await api.avatarUrl(avatar)).toBeUndefined();
+    expect(await api.avatarUrl(avatar)).toBeUndefined();
+    expect(await api.avatarUrl(avatar)).toBeUndefined();
+  });
+});

@@ -3,8 +3,16 @@ import { editNoteCommand } from './edit-note.js';
 import { feedButtons, feedCommand } from './feed.js';
 import { helpCommand } from './help.js';
 import { draftButtons, patchCommand, patchModals } from './patch.js';
+import { refreshNoteCommand } from './refresh-note.js';
 import { settingsCommand } from './settings.js';
 
-export const commands: Command[] = [patchCommand, feedCommand, settingsCommand, helpCommand, editNoteCommand];
+export const commands: Command[] = [
+  patchCommand,
+  feedCommand,
+  settingsCommand,
+  helpCommand,
+  editNoteCommand,
+  refreshNoteCommand,
+];
 
 export const componentHandlers: ComponentHandler[] = [patchModals, draftButtons, feedButtons];

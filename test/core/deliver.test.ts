@@ -206,3 +206,59 @@ describe('Deliverer.editPost', () => {
     expect(row?.contentHash).toBe('new');
   });
 });
+
+describe('thumbnails', () => {
+  const withIcon = sampleNote({
+    project: { name: 'acme/rocket', iconUrl: 'https://avatars.githubusercontent.com/u/1?v=4' },
+  });
+  const hasThumbnail = (index: number) => JSON.stringify(rest.calls[index]?.body).includes('avatars');
+
+  it('shows the icon by default', async () => {
+    const feed = await seedFeed();
+    await deliverer().deliverRelease(feed, 'github:1', withIcon, 'h');
+    expect(hasThumbnail(0)).toBe(true);
+  });
+
+  it('follows the server setting when the feed has none', async () => {
+    const feed = await seedFeed();
+    await ctx.db.update(guilds).set({ showThumbnail: false });
+    await deliverer().deliverRelease(feed, 'github:1', withIcon, 'h');
+    expect(hasThumbnail(0)).toBe(false);
+  });
+
+  it("lets a feed override the server's setting", async () => {
+    await ctx.db.insert(guilds).values({ id: 'g1', showThumbnail: false });
+    const on = await seedFeed({ showThumbnail: true });
+    const off = await seedFeed({ channelId: 'c2', showThumbnail: false });
+    await ctx.db.update(guilds).set({ showThumbnail: true });
+    const d = deliverer();
+
+    await d.deliverRelease(off, 'github:1', withIcon, 'h');
+    await ctx.db.update(guilds).set({ showThumbnail: false });
+    await d.deliverRelease(on, 'github:1', withIcon, 'h');
+
+    expect(hasThumbnail(0)).toBe(false);
+    expect(hasThumbnail(1)).toBe(true);
+  });
+
+  it("uses the post's current feed setting when editing", async () => {
+    const feed = await seedFeed();
+    const d = deliverer();
+    await d.deliverRelease(feed, 'github:1', withIcon, 'h');
+    await ctx.db.update(feeds).set({ showThumbnail: false });
+    const [post] = await ctx.db.select().from(posts);
+    if (!post) throw new Error('no post');
+
+    await d.editPost(post, withIcon, 'h2');
+    expect(hasThumbnail(1)).toBe(false);
+  });
+
+  it('uses the server setting for manual notes', async () => {
+    await ctx.db.insert(guilds).values({ id: 'g1', showThumbnail: false });
+    await deliverer().postManual(
+      { guildId: 'g1', channelId: 'c9', pingRoleId: null, createdBy: 'u1' },
+      { ...withIcon, source: 'manual' },
+    );
+    expect(hasThumbnail(0)).toBe(false);
+  });
+});

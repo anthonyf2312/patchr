@@ -9,7 +9,7 @@ import {
   MessageFlags,
 } from 'discord.js';
 import { describe, expect, it } from 'vitest';
-import { BRAND_COLOR, MESSAGE_TEXT_LIMIT, NOTES_MAX_LENGTH } from '../../../src/core/limits.js';
+import { BRAND_COLOR, MESSAGE_TEXT_LIMIT, NOTES_MAX_LENGTH, PULLED_COLOR } from '../../../src/core/limits.js';
 import type { PatchNote } from '../../../src/core/patch-note.js';
 import { renderCard } from '../../../src/core/render/card.js';
 
@@ -155,6 +155,33 @@ describe('renderCard', () => {
     expect(texts(card.components).join('').length).toBeLessThanOrEqual(MESSAGE_TEXT_LIMIT - 1000);
   });
 
+  it('leaves the icon out when thumbnails are off', () => {
+    const first = container(renderCard(release, { thumbnail: false }).components).components[0];
+    expect(first).toEqual({
+      type: ComponentType.TextDisplay,
+      content: '-# [acme/rocket](<https://github.com/acme/rocket>)\n## v1.2.0 · Liftoff',
+    });
+  });
+
+  describe('a pulled release', () => {
+    const pulled: PatchNote = { ...release, pulled: true };
+
+    it('turns grey', () => {
+      expect(container(renderCard(pulled).components).accent_color).toBe(PULLED_COLOR);
+    });
+
+    it('says the release was pulled, right under the header, and keeps the notes', () => {
+      const all = texts(renderCard(pulled).components);
+      expect(all[1]).toBe("**Release pulled.** It's no longer on GitHub.");
+      expect(all).toContain('### Bug Fixes\n- Fixed the thing');
+    });
+
+    it('drops the links, which lead nowhere now', () => {
+      expect(buttons(renderCard(pulled).components)).toEqual([]);
+      expect(texts(renderCard({ ...pulled, truncated: true }).components)).toContain('-# Notes shortened.');
+    });
+  });
+
   it('stays within the message text limit with maximum-size parts', () => {
     const huge: PatchNote = {
       ...release,
@@ -162,6 +189,7 @@ describe('renderCard', () => {
       version: 'v'.repeat(300),
       title: 't'.repeat(300),
       body: `${'line of notes\n'.repeat(400)}`.slice(0, NOTES_MAX_LENGTH + 500),
+      pulled: true,
     };
     const card = renderCard(huge, { pingRoleId: '999', emojis: { patchr: '<:patchr:1234567890123456789>' } });
     const total = texts(card.components).join('').length;

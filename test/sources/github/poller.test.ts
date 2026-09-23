@@ -2,7 +2,12 @@ import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Deliverer } from '../../../src/core/deliver.js';
 import { feeds, githubRepos, guilds, posts } from '../../../src/db/schema.js';
-import type { GitHubRepo, ReleasesResult, RepoResult } from '../../../src/sources/github/api.js';
+import type {
+  GitHubRepo,
+  ReleaseResult,
+  ReleasesResult,
+  RepoResult,
+} from '../../../src/sources/github/api.js';
 import { GitHubPoller, type PollerOptions, type ReleaseApi } from '../../../src/sources/github/poller.js';
 import type { GitHubRelease } from '../../../src/sources/github/to-note.js';
 import { useTestDatabase } from '../../helpers/db.js';
@@ -24,6 +29,11 @@ class FakeGitHub implements ReleaseApi {
   };
   listCalls: { fullName: string; etag: string | undefined }[] = [];
   repoCalls = 0;
+  releaseLookups: number[] = [];
+  /** Answers for `getRelease`, in order; after that it looks the id up in `releases`. */
+  nextRelease: ReleaseResult[] = [];
+  /** The avatar's version, or undefined to make the lookup fail. */
+  avatarVersion: string | undefined;
   rateLimitRemaining: number | undefined;
 
   async listReleases(fullName: string, etag?: string): Promise<ReleasesResult> {
@@ -34,6 +44,18 @@ class FakeGitHub implements ReleaseApi {
   async getRepoById(): Promise<RepoResult> {
     this.repoCalls++;
     return { kind: 'ok', repo: this.repo };
+  }
+
+  async getRelease(_fullName: string, id: number): Promise<ReleaseResult> {
+    this.releaseLookups.push(id);
+    const next = this.nextRelease.shift();
+    if (next) return next;
+    const found = this.releases.find((r) => r.id === id);
+    return found ? { kind: 'ok', release: structuredClone(found) } : { kind: 'gone', status: 404 };
+  }
+
+  async avatarUrl(raw: string): Promise<string | undefined> {
+    return this.avatarVersion ? `${raw}?pv=${this.avatarVersion}` : undefined;
   }
 }
 
@@ -277,6 +299,22 @@ describe('GitHubPoller', () => {
     expect((await repoRow()).fullName).toBe('acme/rocket-ship');
   });
 
+  it('stores a versioned avatar during the daily check, and keeps it when the lookup fails', async () => {
+    await seed();
+    const stale = new Date(NOW - 25 * 3600_000);
+    await ctx.db.update(githubRepos).set({ lastPrivacyCheckAt: stale });
+    github.avatarVersion = 'abc';
+    github.next = [{ kind: 'not_modified' }, { kind: 'not_modified' }];
+
+    await poller().pollRepo(await repoRow());
+    expect((await repoRow()).ownerAvatarUrl).toBe('https://avatars.githubusercontent.com/u/1?pv=abc');
+
+    github.avatarVersion = undefined;
+    await ctx.db.update(githubRepos).set({ lastPrivacyCheckAt: stale });
+    await poller().pollRepo(await repoRow());
+    expect((await repoRow()).ownerAvatarUrl).toBe('https://avatars.githubusercontent.com/u/1?pv=abc');
+  });
+
   it('only polls repos that are due and have an active feed', async () => {
     await seed({ status: 'paused' });
     await ctx.db
@@ -314,6 +352,81 @@ describe('GitHubPoller', () => {
 
     expect(await poller({ batchSize: 2 }).drain()).toBe(5);
     expect(github.listCalls).toHaveLength(5);
+  });
+});
+
+describe('GitHubPoller pulled releases', () => {
+  const edits = () => rest.calls.filter((c) => c.method === 'patch');
+
+  async function postRelease(...list: GitHubRelease[]) {
+    await seed();
+    github.releases = list;
+    await poller().pollRepo(await repoRow());
+    rest.calls = [];
+  }
+
+  it('marks the post when its release is deleted on GitHub', async () => {
+    await postRelease(release(1, '2026-09-10T00:00:00Z'), release(2, '2026-09-11T00:00:00Z'));
+
+    github.releases = [release(2, '2026-09-11T00:00:00Z')];
+    await poller().pollRepo(await repoRow());
+
+    const pulledEdits = () => edits().filter((e) => JSON.stringify(e.body).includes('Release pulled'));
+    expect(github.releaseLookups).toEqual([1]);
+    expect(pulledEdits()).toHaveLength(1);
+    expect(pulledEdits()[0]?.route).toBe('/channels/c1/messages/1000');
+    const pulled = (await ctx.db.select().from(posts)).find((p) => p.releaseKey === 'github:1');
+    expect(pulled?.note.pulled).toBe(true);
+
+    await poller().pollRepo(await repoRow());
+    expect(pulledEdits()).toHaveLength(1);
+  });
+
+  it('marks the post when its release is turned back into a draft', async () => {
+    await postRelease(release(1, '2026-09-10T00:00:00Z'));
+    github.releases = [release(1, '2026-09-10T00:00:00Z', { draft: true, published_at: null })];
+
+    await poller().pollRepo(await repoRow());
+
+    expect(JSON.stringify(edits()[0]?.body)).toContain('Release pulled');
+  });
+
+  it('puts the post back when the release comes back', async () => {
+    await postRelease(release(1, '2026-09-10T00:00:00Z'));
+    github.releases = [];
+    await poller().pollRepo(await repoRow());
+
+    github.releases = [release(1, '2026-09-10T00:00:00Z')];
+    await poller().pollRepo(await repoRow());
+
+    expect(edits()).toHaveLength(2);
+    expect(JSON.stringify(edits()[1]?.body)).not.toContain('Release pulled');
+    const [post] = await ctx.db.select().from(posts);
+    expect(post?.note.pulled).toBeUndefined();
+  });
+
+  it('leaves older releases alone when the list is full and they just fell off it', async () => {
+    await postRelease(release(1, '2026-09-02T00:00:00Z'));
+    github.releases = Array.from({ length: 20 }, (_, i) =>
+      release(100 + i, `2026-09-${String(10 + i).padStart(2, '0')}T00:00:00Z`),
+    );
+
+    await poller().pollRepo(await repoRow());
+
+    expect(github.releaseLookups).toEqual([]);
+    expect(edits()).toHaveLength(0);
+  });
+
+  it('leaves the post alone when GitHub does not confirm the release is gone', async () => {
+    await postRelease(release(1, '2026-09-10T00:00:00Z'));
+    github.releases = [];
+    github.nextRelease = [{ kind: 'error', message: 'GitHub 502' }];
+
+    await poller().pollRepo(await repoRow());
+
+    expect(edits()).toHaveLength(0);
+    const [post] = await ctx.db.select().from(posts);
+    expect(post?.note.pulled).toBeUndefined();
   });
 });
 

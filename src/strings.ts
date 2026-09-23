@@ -62,10 +62,22 @@ export const strings = {
   editNote: {
     notPatchr: "That message isn't a Patchr post.",
     fromGithub:
-      'This post comes from a GitHub release. Edit the release on GitHub and Patchr updates the post within a few minutes.',
+      'This post comes from a GitHub release. Edit the release on GitHub and Patchr updates the post within a few minutes. To update it right away, use **Refresh patch note** instead.',
     gone: "That post's message is gone, so there's nothing to edit.",
     updated: 'Updated.',
     failed: "Discord didn't take the edit. Try again in a moment.",
+  },
+
+  refreshNote: {
+    result: {
+      refreshed: 'Refreshed.',
+      pulled: 'This release is no longer on GitHub, so the post now says it was pulled.',
+      message_gone: "That post's message is gone, so there's nothing to refresh.",
+      failed: "Discord didn't take the edit. Try again in a moment.",
+      github_down: "GitHub didn't answer. Try again in a minute.",
+      repo_gone: "GitHub can't find this repo any more, so there's nothing to refresh from.",
+      private: "This repo is private now, so Patchr won't read from it.",
+    },
   },
 
   feed: {
@@ -90,8 +102,14 @@ export const strings = {
     latestAlready: 'The latest release is already posted there.',
     listTitle: '## Feeds',
     listEmpty: 'No feeds yet. Add one with `/feed add github`.',
-    listLine: (repo: string, channelId: string, pingRoleId: string | null, prereleases: boolean) =>
-      `**${repo}** → ${channel(channelId)}${pingRoleId ? ` · pings ${role(pingRoleId)}` : ''}${prereleases ? ' · pre-releases' : ''}`,
+    listLine: (
+      repo: string,
+      channelId: string,
+      pingRoleId: string | null,
+      prereleases: boolean,
+      thumbnail: boolean | null,
+    ) =>
+      `**${repo}** → ${channel(channelId)}${pingRoleId ? ` · pings ${role(pingRoleId)}` : ''}${prereleases ? ' · pre-releases' : ''}${thumbnail === null ? '' : ` · thumbnail ${thumbnail ? 'on' : 'off'}`}`,
     paused: (reason: string) =>
       `-# ⚠️ Paused: ${reason}. Fix it, then run \`/feed edit\` on this feed to resume.`,
     repoUnavailable: "-# ⚠️ GitHub can't find this repo any more.",
@@ -106,11 +124,17 @@ export const strings = {
 
   settings: {
     title: '## Settings',
-    summary: (defaultChannelId: string | null, defaultPingRoleId: string | null, autoPublish: boolean) =>
+    summary: (
+      defaultChannelId: string | null,
+      defaultPingRoleId: string | null,
+      autoPublish: boolean,
+      showThumbnail: boolean,
+    ) =>
       [
         `**Default channel for /patch:** ${defaultChannelId ? channel(defaultChannelId) : 'none'}`,
         `**Default ping role:** ${defaultPingRoleId ? role(defaultPingRoleId) : 'none'}`,
         `**Publish in announcement channels:** ${autoPublish ? 'on' : 'off'}`,
+        `**Thumbnails on posts:** ${showThumbnail ? 'on' : 'off'}`,
       ].join('\n'),
     saved: '-# Saved.',
   },
@@ -121,12 +145,14 @@ export const strings = {
         '## Patchr',
         'Patch notes, posted beautifully.',
         '### GitHub releases',
-        `\`/feed add github\` watches a public repo and posts each new release to the channel you pick. Up to ${maxFeeds} feeds per server, each with its own channel. Edit a release on GitHub and the post updates too.`,
+        `\`/feed add github\` watches a public repo and posts each new release to the channel you pick. Up to ${maxFeeds} feeds per server, each with its own channel. Edit a release on GitHub and the post updates too. If a release is pulled from GitHub, the post says so.`,
         '### Custom notes',
         `\`/patch\` opens a form for the version, title and notes, then shows you a private preview before anything is posted. Notes can be up to ${notesLimit} characters, and Discord markdown works. To fix a post later, right-click it → **Apps** → **Edit patch note**.`,
         '### Pings and announcements',
         'Choose a role to ping for each feed or note, or set a default with `/settings`. In announcement channels, Patchr publishes the post so servers following the channel get it too.',
         '### Good to know',
+        '- To update a post right away, for example after a new profile picture, right-click it → **Apps** → **Refresh patch note**.',
+        "- Posts show the repo owner's avatar or the server icon. Turn it off with `/settings thumbnail`, or for one feed with `/feed edit`.",
         '- Patchr only follows public repos. Very long release notes are shortened, with a link to the rest.',
         '- In the channel it posts to, Patchr needs **View Channel**, **Send Messages** and **Embed Links**.',
         '- By default only members with **Manage Server** can use `/patch`, `/feed` and `/settings`. To let a role post notes, go to Server Settings → Integrations → Patchr.',

@@ -9,3 +9,6 @@ export const TITLE_MAX_LENGTH = 100;
 
 /** Patchr pink (#FF5E8A), the accent on every post. */
 export const BRAND_COLOR = 0xff5e8a;
+
+/** Grey, for a post whose release was pulled from GitHub. */
+export const PULLED_COLOR = 0x80848e;

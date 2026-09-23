@@ -30,6 +30,11 @@ export const settingsCommand: Command = {
     .addBooleanOption((o) =>
       o.setName('auto-publish').setDescription('Publish posts in announcement channels (default: on)'),
     )
+    .addBooleanOption((o) =>
+      o
+        .setName('thumbnail')
+        .setDescription("Show the repo owner's avatar or the server icon on posts (default: on)"),
+    )
     .toJSON(),
 
   async chatInput(interaction, app) {
@@ -73,12 +78,20 @@ export const settingsCommand: Command = {
     const autoPublish = interaction.options.getBoolean('auto-publish');
     if (autoPublish !== null) changes.autoPublish = autoPublish;
 
+    const thumbnail = interaction.options.getBoolean('thumbnail');
+    if (thumbnail !== null) changes.showThumbnail = thumbnail;
+
     const changed = Object.keys(changes).length > 0;
     const settings = changed ? await updateGuildSettings(app.db, interaction.guildId, changes) : current;
 
     const lines = [
       strings.settings.title,
-      strings.settings.summary(settings.defaultChannelId, settings.defaultPingRoleId, settings.autoPublish),
+      strings.settings.summary(
+        settings.defaultChannelId,
+        settings.defaultPingRoleId,
+        settings.autoPublish,
+        settings.showThumbnail,
+      ),
       ...warnings,
     ];
     if (changed) lines.push(strings.settings.saved);

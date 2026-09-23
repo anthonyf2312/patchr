@@ -12,6 +12,7 @@ import {
   SlashCommandBuilder,
 } from 'discord.js';
 import type { App } from '../app.js';
+import { showThumbnail } from '../core/deliver.js';
 import { noteHash } from '../core/hash.js';
 import { renderCard } from '../core/render/card.js';
 import { checkPingRole, checkPostChannel } from '../discord/targets.js';
@@ -225,6 +226,7 @@ async function preview(draft: Draft, guild: Guild, app: App, problem?: string) {
   const header = lines.join('\n');
   const card = renderCard(draft.note, {
     emojis: app.emojis(),
+    thumbnail: await showThumbnail(app.db, draft.guildId, null),
     reservedText: header.length,
     ...(draft.ping && draft.pingRoleId && { pingRoleId: draft.pingRoleId }),
   });

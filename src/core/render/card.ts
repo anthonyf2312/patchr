@@ -8,7 +8,7 @@ import {
   MessageFlags,
   SeparatorSpacingSize,
 } from 'discord.js';
-import { BRAND_COLOR, MESSAGE_TEXT_LIMIT } from '../limits.js';
+import { BRAND_COLOR, MESSAGE_TEXT_LIMIT, PULLED_COLOR } from '../limits.js';
 import { applyBadges, type BadgeEmojis } from '../markdown/badges.js';
 import { escapeDiscord, escapeInline } from '../markdown/escape.js';
 import type { PatchNote } from '../patch-note.js';
@@ -19,6 +19,8 @@ export interface RenderOptions {
   pingRoleId?: string;
   /** Characters kept free for text the caller adds around the card, such as a preview header. */
   reservedText?: number;
+  /** Show the project icon next to the header. On unless a server or feed turned it off. */
+  thumbnail?: boolean;
 }
 
 export interface RenderedCard {
@@ -30,8 +32,9 @@ export interface RenderedCard {
 
 const HEADER_PART_MAX = 120;
 const EMPTY_BODY = '*No notes for this release.*';
+const PULLED_LINE = "**Release pulled.** It's no longer on GitHub.";
 
-/** Renders a note as a Components V2 message: one pink container, with the same layout every time. */
+/** Renders a note as a Components V2 message: one container (pink, or grey once pulled), with the same layout every time. */
 export function renderCard(note: PatchNote, options: RenderOptions = {}): RenderedCard {
   const header = renderHeader(note);
   const footer = renderFooter(note, options);
@@ -40,7 +43,10 @@ export function renderCard(note: PatchNote, options: RenderOptions = {}): Render
   let body = note.body.trim() === '' ? EMPTY_BODY : applyBadges(note.body, options.emojis ?? {});
   let truncated = note.truncated === true;
 
-  const fixed = header.length + footer.length + (ping?.length ?? 0) + shortenedLine(note).length;
+  const pulled = note.pulled ? PULLED_LINE : undefined;
+
+  const fixed =
+    header.length + footer.length + (ping?.length ?? 0) + (pulled?.length ?? 0) + shortenedLine(note).length;
   const budget = MESSAGE_TEXT_LIMIT - fixed - (options.reservedText ?? 0);
   if (body.length > budget) {
     body = cutToLines(body, budget);
@@ -49,7 +55,7 @@ export function renderCard(note: PatchNote, options: RenderOptions = {}): Render
 
   const inner: APIComponentInContainer[] = [];
 
-  if (note.project.iconUrl) {
+  if (note.project.iconUrl && options.thumbnail !== false) {
     inner.push({
       type: ComponentType.Section,
       components: [text(header)],
@@ -58,6 +64,7 @@ export function renderCard(note: PatchNote, options: RenderOptions = {}): Render
   } else {
     inner.push(text(header));
   }
+  if (pulled) inner.push(text(pulled));
 
   inner.push({ type: ComponentType.Separator, divider: true, spacing: SeparatorSpacingSize.Small });
   inner.push(text(body));
@@ -70,7 +77,8 @@ export function renderCard(note: PatchNote, options: RenderOptions = {}): Render
 
   const components: APIMessageTopLevelComponent[] = [];
   if (ping) components.push(text(ping));
-  components.push({ type: ComponentType.Container, accent_color: BRAND_COLOR, components: inner });
+  const accent = note.pulled ? PULLED_COLOR : BRAND_COLOR;
+  components.push({ type: ComponentType.Container, accent_color: accent, components: inner });
 
   return {
     flags: MessageFlags.IsComponentsV2,
@@ -105,11 +113,15 @@ function renderFooter(note: PatchNote, options: RenderOptions): string {
 }
 
 function shortenedLine(note: PatchNote): string {
-  return note.url ? `-# Notes shortened. [Read the full notes](<${note.url}>)` : '-# Notes shortened.';
+  return note.url && !note.pulled
+    ? `-# Notes shortened. [Read the full notes](<${note.url}>)`
+    : '-# Notes shortened.';
 }
 
 function linkButtons(note: PatchNote): APIButtonComponentWithURL[] {
   const buttons: APIButtonComponentWithURL[] = [];
+  // A pulled release's page is gone, and its tag may be too.
+  if (note.pulled) return buttons;
   if (note.url) {
     const label = note.source === 'github' ? 'View on GitHub' : 'View release';
     buttons.push({ type: ComponentType.Button, style: ButtonStyle.Link, label, url: note.url });

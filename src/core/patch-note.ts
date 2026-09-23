@@ -19,6 +19,8 @@ export interface PatchNote {
   url?: string;
   compareUrl?: string;
   prerelease: boolean;
+  /** The release was deleted on GitHub or turned back into a draft. */
+  pulled?: boolean;
   /** ISO 8601, so notes survive a JSON round trip through the database. */
   publishedAt: string;
   author?: {

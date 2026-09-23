@@ -18,6 +18,10 @@ export interface NewGithubFeed {
   channelId: string;
   pingRoleId: string | null;
   includePrereleases: boolean;
+  /** Null follows the server's setting. */
+  showThumbnail?: boolean | null;
+  /** The owner's avatar with a version on it (see `GitHubApi.avatarUrl`), when that lookup worked. */
+  avatarUrl?: string;
   createdBy: string;
 }
 
@@ -66,15 +70,23 @@ export async function createGithubFeed(db: Database, input: NewGithubFeed): Prom
 
   const repoValues = {
     fullName: input.repo.full_name,
-    ownerAvatarUrl: input.repo.owner.avatar_url,
     status: 'ok' as const,
     failureCount: 0,
     lastPrivacyCheckAt: now,
   };
+  // Without a versioned avatar, keep the stored one: swapping URLs would re-edit every post.
   await db
     .insert(githubRepos)
-    .values({ id: input.repo.id, nextPollAt: now, ...repoValues })
-    .onConflictDoUpdate({ target: githubRepos.id, set: repoValues });
+    .values({
+      id: input.repo.id,
+      nextPollAt: now,
+      ownerAvatarUrl: input.avatarUrl ?? input.repo.owner.avatar_url,
+      ...repoValues,
+    })
+    .onConflictDoUpdate({
+      target: githubRepos.id,
+      set: { ...repoValues, ...(input.avatarUrl && { ownerAvatarUrl: input.avatarUrl }) },
+    });
 
   const [feed] = await db
     .insert(feeds)
@@ -85,6 +97,7 @@ export async function createGithubFeed(db: Database, input: NewGithubFeed): Prom
       channelId: input.channelId,
       pingRoleId: input.pingRoleId,
       includePrereleases: input.includePrereleases,
+      showThumbnail: input.showThumbnail ?? null,
       baselineAt: now,
       createdBy: input.createdBy,
     })
@@ -97,7 +110,12 @@ export async function createGithubFeed(db: Database, input: NewGithubFeed): Prom
 export async function updateFeed(
   db: Database,
   feedId: string,
-  changes: Partial<Pick<Feed, 'channelId' | 'pingRoleId' | 'includePrereleases' | 'status' | 'pausedReason'>>,
+  changes: Partial<
+    Pick<
+      Feed,
+      'channelId' | 'pingRoleId' | 'includePrereleases' | 'showThumbnail' | 'status' | 'pausedReason'
+    >
+  >,
 ): Promise<void> {
   await db
     .update(feeds)

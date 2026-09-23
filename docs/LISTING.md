@@ -17,10 +17,10 @@ Patchr does one thing: it gets your updates in front of your community.
 Whether you ship code on GitHub or run a project that lives somewhere else entirely, Patchr turns your release notes into clean, readable Discord posts so your members always know what's new.
 
 **GitHub releases, fully automatic**
-Connect a repository and Patchr posts every new release to the channel of your choice, usually within a few minutes of it going out. Markdown, headings and lists come through properly formatted, with the version number, release title and a link back to GitHub. You can watch multiple repositories, send each one to a different channel, and choose whether pre-releases are included. If you edit a release on GitHub, the Discord post updates to match.
+Connect a repository and Patchr posts every new release to the channel of your choice, usually within a few minutes of it going out. Markdown, headings and lists come through properly formatted, with the version number, release title and a link back to GitHub. You can watch multiple repositories, send each one to a different channel, and choose whether pre-releases are included. If you edit a release on GitHub, the Discord post updates to match, and if a release is pulled, the post says so.
 
 **Custom patch notes, for everyone else**
-Not on GitHub? No problem. Game servers, modpacks, websites, communities and hobby projects can all use Patchr too. Just run /patch, fill in the version, title and notes in a simple form, and check the private preview before anything goes out. Patchr publishes a polished post that looks just as good as an automated one. Spotted a typo afterwards? Right-click the post and choose Edit patch note.
+Not on GitHub? No problem. Game servers, modpacks, websites, communities and hobby projects can all use Patchr too. Just run /patch, fill in the version, title and notes in a simple form, and check the private preview before anything goes out. Patchr publishes a polished post that looks just as good as an automated one. Spotted a typo afterwards? Right-click the post and choose Edit patch note. Changed your server icon or profile picture? Choose Refresh patch note to redraw the post.
 
 **Built for announcements**
 Optionally ping a role when new notes are posted, so members who care about updates can opt in without everyone else getting spammed. In announcement channels, Patchr publishes each post so servers following your channel get it too. Every post follows a consistent format, so your update history stays tidy and easy to scroll back through.

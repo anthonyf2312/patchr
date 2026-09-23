@@ -78,6 +78,7 @@ export class Deliverer {
 
     const card = renderCard(note, {
       emojis: this.#emojis(),
+      thumbnail: await showThumbnail(this.#db, feed.guildId, feed.id),
       ...(feed.pingRoleId && { pingRoleId: feed.pingRoleId }),
     });
 
@@ -132,6 +133,7 @@ export class Deliverer {
     const postId = randomUUID();
     const card = renderCard(note, {
       emojis: this.#emojis(),
+      thumbnail: await showThumbnail(this.#db, target.guildId, null),
       ...(target.pingRoleId && { pingRoleId: target.pingRoleId }),
     });
 
@@ -167,11 +169,12 @@ export class Deliverer {
     return { kind: 'sent', postId, messageId };
   }
 
-  /** Re-renders a posted message with a new version of its note. */
+  /** Re-renders a posted message with a new version of its note, and the current thumbnail setting. */
   async editPost(post: Post, note: PatchNote, contentHash: string): Promise<'edited' | 'gone' | 'failed'> {
     if (!post.messageId) return 'gone';
     const card = renderCard(note, {
       emojis: this.#emojis(),
+      thumbnail: await showThumbnail(this.#db, post.guildId, post.feedId),
       ...(post.pingRoleId && { pingRoleId: post.pingRoleId }),
     });
 
@@ -260,6 +263,16 @@ export class Deliverer {
       this.#log.warn({ err: error, channelId, messageId }, 'crosspost failed');
     }
   }
+}
+
+/** Whether posts show the project icon: the feed's setting, or the server's when the feed has none. */
+export async function showThumbnail(db: Database, guildId: string, feedId: string | null): Promise<boolean> {
+  if (feedId) {
+    const [feed] = await db.select({ show: feeds.showThumbnail }).from(feeds).where(eq(feeds.id, feedId));
+    if (typeof feed?.show === 'boolean') return feed.show;
+  }
+  const [guild] = await db.select({ show: guilds.showThumbnail }).from(guilds).where(eq(guilds.id, guildId));
+  return guild?.show ?? true;
 }
 
 function messageBody(card: RenderedCard) {

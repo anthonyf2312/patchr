@@ -43,16 +43,18 @@ describe('guild settings', () => {
       defaultChannelId: null,
       defaultPingRoleId: null,
       autoPublish: true,
+      showThumbnail: true,
     });
   });
 
   it('saves partial updates', async () => {
     await updateGuildSettings(ctx.db, 'g1', { defaultChannelId: 'c1' });
-    await updateGuildSettings(ctx.db, 'g1', { autoPublish: false });
+    await updateGuildSettings(ctx.db, 'g1', { autoPublish: false, showThumbnail: false });
     expect(await getGuildSettings(ctx.db, 'g1')).toEqual({
       defaultChannelId: 'c1',
       defaultPingRoleId: null,
       autoPublish: false,
+      showThumbnail: false,
     });
   });
 
@@ -89,6 +91,28 @@ describe('feeds', () => {
     const [row] = await ctx.db.select().from(githubRepos);
     expect(row).toMatchObject({ id: 7, fullName: 'acme/rocket', ownerAvatarUrl: repo.owner.avatar_url });
     expect(await countFeeds(ctx.db, 'g1')).toBe(1);
+  });
+
+  it('stores a versioned avatar, and only replaces one with another versioned avatar', async () => {
+    await newFeed({ avatarUrl: `${repo.owner.avatar_url}?pv=abc` });
+    await newFeed({ channelId: 'c2' });
+    const [row] = await ctx.db.select().from(githubRepos);
+    expect(row?.ownerAvatarUrl).toBe(`${repo.owner.avatar_url}?pv=abc`);
+
+    await newFeed({ channelId: 'c3', avatarUrl: `${repo.owner.avatar_url}?pv=def` });
+    const [updated] = await ctx.db.select().from(githubRepos);
+    expect(updated?.ownerAvatarUrl).toBe(`${repo.owner.avatar_url}?pv=def`);
+  });
+
+  it('keeps a thumbnail choice per feed, following the server when unset', async () => {
+    const off = await newFeed({ showThumbnail: false });
+    const unset = await newFeed({ channelId: 'c2' });
+    if (off.kind !== 'created' || unset.kind !== 'created') throw new Error('not created');
+    expect(off.feed.showThumbnail).toBe(false);
+    expect(unset.feed.showThumbnail).toBeNull();
+
+    await updateFeed(ctx.db, unset.feed.id, { showThumbnail: true });
+    expect((await getFeed(ctx.db, 'g1', unset.feed.id))?.showThumbnail).toBe(true);
   });
 
   it('refuses the same repo twice in one channel', async () => {
