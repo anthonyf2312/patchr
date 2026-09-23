@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Build on Debian so TypeScript's native compiler has glibc; nothing native reaches the final image.
-FROM node:24-slim AS build
+FROM node:25-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
@@ -9,7 +9,7 @@ COPY tsconfig.json tsconfig.build.json ./
 COPY src ./src
 RUN npm run build && npm prune --omit=dev --no-audit --no-fund
 
-FROM node:24-alpine
+FROM node:25-alpine
 ENV NODE_ENV=production \
     HEALTH_PORT=3000 \
     PGLITE_DIR=/app/data/pglite
