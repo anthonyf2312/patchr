@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!brand", "!drizzle", "!test/fixtures"]
+    "includes": ["**", "!brand", "!drizzle", "!test/fixtures", "!.release-please-manifest.json"]
   },
   "formatter": {
     "enabled": true,
