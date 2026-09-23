@@ -10,7 +10,13 @@ set -eu
 cd "${PATCHR_DIR:-$(dirname "$0")/..}"
 
 before=$(docker compose images --quiet | sort)
-docker compose pull --quiet
+
+# Compose prints pull progress even with --quiet, so output is kept only when a step fails.
+if ! out=$(docker compose pull --quiet 2>&1); then
+  echo "$(date -Iseconds) pull failed:"
+  echo "$out"
+  exit 1
+fi
 
 if ! out=$(docker compose up -d --remove-orphans 2>&1); then
   echo "$(date -Iseconds) update failed:"
