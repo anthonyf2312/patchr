@@ -79,10 +79,10 @@ describe('releaseToNote', () => {
   });
 
   it('drops a release name that only repeats the project', () => {
-    const release = { ...fixture('gh-cli'), tag_name: 'v0.22.0', name: 'spoti.pw v0.22.0' };
-    expect(releaseToNote(release, repo('anthony/spoti.pw')).title).toBeUndefined();
-    const full = { ...release, name: 'Anthony/Spoti.pw 0.22.0' };
-    expect(releaseToNote(full, repo('anthony/spoti.pw')).title).toBeUndefined();
+    const release = { ...fixture('gh-cli'), tag_name: 'v1.2.0', name: 'patchr v1.2.0' };
+    expect(releaseToNote(release, repo('anthonyf2312/patchr')).title).toBeUndefined();
+    const full = { ...release, name: 'AnthonyF2312/Patchr 1.2.0' };
+    expect(releaseToNote(full, repo('anthonyf2312/patchr')).title).toBeUndefined();
   });
 
   it('falls back to the creation date and an empty body', () => {

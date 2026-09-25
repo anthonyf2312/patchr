@@ -89,7 +89,7 @@ export function renderCard(note: PatchNote, options: RenderOptions = {}): Render
 }
 
 /**
- * "## spoti.pw v0.22.0 · Title", under a linked "-# owner/repo" line when the project has a page.
+ * "## patchr v1.2.0 · Title", under a linked "-# owner/repo" line when the project has a page.
  * A `/patch` note has no page, and the line would only repeat the server's name.
  */
 function renderHeader(note: PatchNote): string {

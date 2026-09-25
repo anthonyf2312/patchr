@@ -45,7 +45,7 @@ export function releaseToNote(release: GitHubRelease, repo: RepoInfo, previousTa
 
   if (repo.ownerAvatarUrl) note.project.iconUrl = repo.ownerAvatarUrl;
   const title = cleanTitle(release.name, release.tag_name);
-  // A release named "spoti.pw v0.22.0" has no title beyond what the heading already says.
+  // A release named "patchr v1.2.0" has no title beyond what the heading already says.
   const names = [shortName, repoName, repo.fullName].map((n) => n.toLowerCase());
   if (title && !names.includes(title.toLowerCase())) note.title = title;
   if (converted.truncated) note.truncated = true;
