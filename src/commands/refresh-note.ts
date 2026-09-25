@@ -110,14 +110,15 @@ export async function refreshPost(
   );
 
   if (release.kind === 'gone' || (release.kind === 'ok' && release.release.draft)) {
-    const note: PatchNote = { ...post.note, project, pulled: true };
+    const note: PatchNote = { ...post.note, project: { ...post.note.project, ...project }, pulled: true };
     return edited(await deps.deliverer.editPost(post, note, noteHash(note)), 'pulled');
   }
   if (release.kind !== 'ok') return 'github_down';
 
   const note = releaseToNote(release.release, { ...repoInfo, ownerAvatarUrl: avatar });
-  // Finding the previous tag would take another call; the changelog link it made still works.
+  // Finding the previous tag would take another call; the changelog link and update size it gave still hold.
   if (post.note.compareUrl) note.compareUrl = post.note.compareUrl;
+  if (post.note.bump) note.bump = post.note.bump;
   return edited(await deps.deliverer.editPost(post, note, noteHash(note)), 'refreshed');
 }
 

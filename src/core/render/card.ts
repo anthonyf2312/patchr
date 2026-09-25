@@ -8,7 +8,7 @@ import {
   MessageFlags,
   SeparatorSpacingSize,
 } from 'discord.js';
-import { BRAND_COLOR, MESSAGE_TEXT_LIMIT, PULLED_COLOR } from '../limits.js';
+import { BRAND_COLOR, MESSAGE_TEXT_LIMIT, PRERELEASE_COLOR, PULLED_COLOR } from '../limits.js';
 import { applyBadges, type BadgeEmojis } from '../markdown/badges.js';
 import { escapeDiscord, escapeInline } from '../markdown/escape.js';
 import type { PatchNote } from '../patch-note.js';
@@ -33,6 +33,7 @@ export interface RenderedCard {
 const HEADER_PART_MAX = 120;
 const EMPTY_BODY = '*No notes for this release.*';
 const PULLED_LINE = "**Release pulled.** It's no longer on GitHub.";
+const BUMP_LABELS = { major: 'Major update', minor: 'Minor update', patch: 'Patch update' } as const;
 
 /** Renders a note as a Components V2 message: one container (pink, or grey once pulled), with the same layout every time. */
 export function renderCard(note: PatchNote, options: RenderOptions = {}): RenderedCard {
@@ -77,7 +78,7 @@ export function renderCard(note: PatchNote, options: RenderOptions = {}): Render
 
   const components: APIMessageTopLevelComponent[] = [];
   if (ping) components.push(text(ping));
-  const accent = note.pulled ? PULLED_COLOR : BRAND_COLOR;
+  const accent = note.pulled ? PULLED_COLOR : note.prerelease ? PRERELEASE_COLOR : BRAND_COLOR;
   components.push({ type: ComponentType.Container, accent_color: accent, components: inner });
 
   return {
@@ -87,12 +88,23 @@ export function renderCard(note: PatchNote, options: RenderOptions = {}): Render
   };
 }
 
+/**
+ * "## spoti.pw v0.22.0 · Title", under a linked "-# owner/repo" line when the project has a page.
+ * A `/patch` note has no page, and the line would only repeat the server's name.
+ */
 function renderHeader(note: PatchNote): string {
-  const name = escapeDiscord(clip(note.project.name, HEADER_PART_MAX));
-  const project = note.project.url ? `[${name}](<${note.project.url}>)` : name;
-  const version = escapeInline(clip(note.version, HEADER_PART_MAX));
-  const title = note.title?.trim() ? ` · ${escapeInline(clip(note.title.trim(), HEADER_PART_MAX))}` : '';
-  return `-# ${project}\n## ${version}${title}`;
+  const name = clip(note.project.shortName ?? note.project.name, HEADER_PART_MAX);
+  const version = clip(note.version, HEADER_PART_MAX);
+  const named = version.toLowerCase().includes(name.toLowerCase()) ? version : `${name} ${version}`;
+  const parts = [escapeInline(named)];
+  if (note.prerelease) parts.push('Pre-release');
+  if (note.title?.trim()) parts.push(escapeInline(clip(note.title.trim(), HEADER_PART_MAX)));
+  const heading = `## ${parts.join(' · ')}`;
+
+  if (!note.project.url) return heading;
+  const link = `[${escapeDiscord(clip(note.project.name, HEADER_PART_MAX))}](<${note.project.url}>)`;
+  const bump = note.bump ? ` · ${BUMP_LABELS[note.bump]}` : '';
+  return `-# ${link}${bump}\n${heading}`;
 }
 
 function renderFooter(note: PatchNote, options: RenderOptions): string {
@@ -101,7 +113,6 @@ function renderFooter(note: PatchNote, options: RenderOptions): string {
   const when = `<t:${Math.floor(Date.parse(note.publishedAt) / 1000)}:D>`;
   const verb = note.source === 'github' ? 'Released' : 'Posted';
 
-  if (note.prerelease) parts.push('Pre-release');
   parts.push(`${verb} ${when}`);
 
   const author = note.author;

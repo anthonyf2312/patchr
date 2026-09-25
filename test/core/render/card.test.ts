@@ -9,7 +9,13 @@ import {
   MessageFlags,
 } from 'discord.js';
 import { describe, expect, it } from 'vitest';
-import { BRAND_COLOR, MESSAGE_TEXT_LIMIT, NOTES_MAX_LENGTH, PULLED_COLOR } from '../../../src/core/limits.js';
+import {
+  BRAND_COLOR,
+  MESSAGE_TEXT_LIMIT,
+  NOTES_MAX_LENGTH,
+  PRERELEASE_COLOR,
+  PULLED_COLOR,
+} from '../../../src/core/limits.js';
 import type { PatchNote } from '../../../src/core/patch-note.js';
 import { renderCard } from '../../../src/core/render/card.js';
 
@@ -17,6 +23,7 @@ const release: PatchNote = {
   source: 'github',
   project: {
     name: 'acme/rocket',
+    shortName: 'rocket',
     url: 'https://github.com/acme/rocket',
     iconUrl: 'https://avatars.githubusercontent.com/u/1',
   },
@@ -78,7 +85,7 @@ describe('renderCard', () => {
     const section = container(renderCard(release).components).components[0] as APISectionComponent;
     expect(section.type).toBe(ComponentType.Section);
     expect(section.components[0]?.content).toBe(
-      '-# [acme/rocket](<https://github.com/acme/rocket>)\n## v1.2.0 · Liftoff',
+      '-# [acme/rocket](<https://github.com/acme/rocket>)\n## rocket v1.2.0 · Liftoff',
     );
     expect(section.accessory).toMatchObject({
       type: ComponentType.Thumbnail,
@@ -89,12 +96,28 @@ describe('renderCard', () => {
   it('uses a plain header without a title or icon', () => {
     const first = container(renderCard(manual).components).components[0] as APITextDisplayComponent;
     expect(first.type).toBe(ComponentType.TextDisplay);
-    expect(first.content).toBe('-# Survival Server\n## 2.0');
+    expect(first.content).toBe('## Survival Server 2.0');
+  });
+
+  it('uses the full name when there is no short one', () => {
+    const { shortName: _, ...project } = release.project;
+    expect(texts(renderCard({ ...release, project }).components)[0]).toContain('\n## acme/rocket v1.2.0');
+  });
+
+  it('does not repeat a name the version already has', () => {
+    const card = renderCard({ ...manual, version: 'Survival server update 5' });
+    expect(texts(card.components)[0]).toBe('## Survival server update 5');
   });
 
   it('escapes user-written header text', () => {
     const card = renderCard({ ...manual, project: { name: '<@1> **Server**' }, title: '_hi_' });
-    expect(texts(card.components)[0]).toBe('-# \\<@1> \\*\\*Server\\*\\*\n## 2.0 · \\_hi\\_');
+    expect(texts(card.components)[0]).toBe('## \\<@1> \\*\\*Server\\*\\* 2.0 · \\_hi\\_');
+  });
+
+  it('says how big the update is next to the repo', () => {
+    expect(texts(renderCard({ ...release, bump: 'minor' }).components)[0]).toBe(
+      '-# [acme/rocket](<https://github.com/acme/rocket>) · Minor update\n## rocket v1.2.0 · Liftoff',
+    );
   });
 
   it('applies badges to the body', () => {
@@ -115,10 +138,22 @@ describe('renderCard', () => {
     expect(texts(renderCard(manual).components).at(-1)).toBe('-# Posted <t:1790164800:D> · by <@42>');
   });
 
-  it('flags pre-releases', () => {
-    expect(texts(renderCard({ ...release, prerelease: true }).components).at(-1)).toContain(
-      'Pre-release · Released',
-    );
+  describe('a pre-release', () => {
+    const pre: PatchNote = { ...release, version: 'v1.3.0-beta.1', prerelease: true };
+
+    it('says so in the heading, not the footer', () => {
+      const all = texts(renderCard(pre).components);
+      expect(all[0]).toContain('\n## rocket v1.3.0-beta.1 · Pre-release · Liftoff');
+      expect(all.at(-1)).not.toContain('Pre-release');
+    });
+
+    it('turns amber', () => {
+      expect(container(renderCard(pre).components).accent_color).toBe(PRERELEASE_COLOR);
+    });
+
+    it('turns grey once pulled', () => {
+      expect(container(renderCard({ ...pre, pulled: true }).components).accent_color).toBe(PULLED_COLOR);
+    });
   });
 
   it('links to the full notes when the body was shortened', () => {
@@ -159,7 +194,7 @@ describe('renderCard', () => {
     const first = container(renderCard(release, { thumbnail: false }).components).components[0];
     expect(first).toEqual({
       type: ComponentType.TextDisplay,
-      content: '-# [acme/rocket](<https://github.com/acme/rocket>)\n## v1.2.0 · Liftoff',
+      content: '-# [acme/rocket](<https://github.com/acme/rocket>)\n## rocket v1.2.0 · Liftoff',
     });
   });
 

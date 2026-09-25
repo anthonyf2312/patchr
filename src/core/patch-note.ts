@@ -7,11 +7,15 @@ export interface PatchNote {
   source: 'github' | 'manual';
   project: {
     name: string;
+    /** What the heading calls it, when that differs from `name`: a repo's name without its owner, or a monorepo package. */
+    shortName?: string;
     url?: string;
     iconUrl?: string;
   };
   version: string;
   title?: string;
+  /** How big the update is next to the release before it. */
+  bump?: 'major' | 'minor' | 'patch';
   /** Discord markdown, before badges are applied. */
   body: string;
   /** True when the body was shortened; `url` has the full notes. */

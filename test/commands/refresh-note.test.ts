@@ -90,8 +90,14 @@ async function githubPost(options: { feed?: boolean } = {}): Promise<Post> {
           .values({ guildId: 'g1', source: 'github', githubRepoId: 7, channelId: 'c1', createdBy: 'u1' })
           .returning();
   const note = sampleNote({
-    project: { name: 'acme/rocket', url: 'https://github.com/acme/rocket', iconUrl: `${RAW_AVATAR}&pv=old` },
+    project: {
+      name: 'acme/rocket',
+      shortName: 'rocket',
+      url: 'https://github.com/acme/rocket',
+      iconUrl: `${RAW_AVATAR}&pv=old`,
+    },
     compareUrl: 'https://github.com/acme/rocket/compare/v0.9.0...v1.0.0',
+    bump: 'major',
   });
   const [post] = await ctx.db
     .insert(posts)
@@ -128,6 +134,7 @@ describe('refreshPost', () => {
     expect(lastEdit()).toContain('Fresh notes');
     expect(lastEdit()).toContain(`${RAW_AVATAR}&pv=new`);
     expect(lastEdit()).toContain('Full changelog');
+    expect(lastEdit()).toContain('Major update');
     const [repo] = await ctx.db.select().from(githubRepos);
     expect(repo?.ownerAvatarUrl).toBe(`${RAW_AVATAR}&pv=new`);
   });
@@ -164,6 +171,7 @@ describe('refreshPost', () => {
     expect(await refreshPost(deps(), post, server)).toBe('pulled');
 
     expect(lastEdit()).toContain('Release pulled');
+    expect(lastEdit()).toContain('## rocket v1.0.0');
     const [row] = await ctx.db.select().from(posts);
     expect(row?.note.pulled).toBe(true);
   });
