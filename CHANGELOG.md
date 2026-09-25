@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/anthonyf2312/patchr/compare/v1.1.0...v1.2.0) (2026-09-25)
+
+
+### New
+
+* posts now lead with the project name, like "spoti.pw v0.22.0", and say whether an update is major, minor or a patch ([822a576](https://github.com/anthonyf2312/patchr/commit/822a5766de8b38fcb1ce1ecd1548da61c2564d50))
+
 ## [1.1.0](https://github.com/anthonyf2312/patchr/compare/v1.0.0...v1.1.0) (2026-09-23)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "patchr",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Patch notes, posted beautifully. A Discord bot that posts GitHub releases and custom patch notes.",
   "license": "MIT",
   "author": "Anthony (https://github.com/anthonyf2312)",
