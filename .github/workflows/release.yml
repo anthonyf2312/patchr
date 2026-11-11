@@ -26,7 +26,7 @@ jobs:
       minor: ${{ steps.release.outputs.minor }}
       patch: ${{ steps.release.outputs.patch }}
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v5
         id: release
         with:
           config-file: release-please-config.json
@@ -52,17 +52,17 @@ jobs:
       MAJOR_MINOR: ${{ needs.release-please.outputs.major }}.${{ needs.release-please.outputs.minor }}
       MAJOR: ${{ needs.release-please.outputs.major }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.release-please.outputs.tag || github.sha }}
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: docker/setup-qemu-action@v4
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/metadata-action@v5
+      - uses: docker/metadata-action@v6
         id: meta
         with:
           images: ${{ env.IMAGE }}
@@ -73,7 +73,7 @@ jobs:
             type=raw,value=${{ env.MAJOR_MINOR }},enable=${{ env.RELEASE }}
             type=raw,value=${{ env.MAJOR }},enable=${{ env.RELEASE }}
             type=raw,value=latest,enable=${{ env.RELEASE }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: .
           platforms: linux/amd64,linux/arm64
